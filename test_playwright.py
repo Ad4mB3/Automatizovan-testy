@@ -16,11 +16,7 @@ EMPTY_USERNAME_ERROR = "#error-cs-username-required"
 EMPTY_PASSWORD_ERROR = "#error-cs-password-required"
 
 
-
-# TODO: python 3.14.7 playwright 1.63.0 python-dotenv 1.2.4 
-# TODO: regrest test 
-
-#USPĚPŠNÉ PŘIHLÁŠENÍ 
+# Úspěšné přihlášení 
 def test_successful_login_flow(login_page: Page):
     """Ověřuje úspěšné přihlášení s platnými údaji."""
     page = login_page
@@ -31,7 +27,7 @@ def test_successful_login_flow(login_page: Page):
     expect(page).to_have_url(re.compile(r"portal\.engeto\.com/study/"))
 
 
-#ŠPATNÉ PŘIHLAŠOVACÍ UDAJE
+# Špatné přihlašovací údaje
 def test_unsuccessful_login_flow(login_page: Page):
     """Ověřuje, že při zadání špatných údajů se zobrazí chybová hláška a URL se nezmění."""
     page = login_page
@@ -43,7 +39,7 @@ def test_unsuccessful_login_flow(login_page: Page):
     expect(page.locator(LOGIN_ERROR)).to_be_visible()
     expect(page).to_have_url(re.compile(r"engeto-v2\.eu\.auth0\.com/u/login"))
 
-
+# Test s prázdnými poli 
 def test_login_with_empty_fields(login_page: Page):
     """Ověřuje, že odeslání prázdného formuláře vyvolá validaci a zobrazí chybové hlášky."""
     page = login_page
