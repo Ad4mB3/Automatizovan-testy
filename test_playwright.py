@@ -6,60 +6,51 @@ from playwright.sync_api import Page, expect
 
 load_dotenv("hesla.env")
 
+#lokátory uložené v proměnných 
+COOKIE_REJECT_BUTTON = "#cookiescript_reject"
+USERNAME_INPUT = "#username"
+PASSWORD_INPUT = "#password"
+SUBMIT_BUTTON = "button[type='submit']"
+LOGIN_ERROR = "#error-element-password"
+EMPTY_USERNAME_ERROR = "#error-cs-username-required"
+EMPTY_PASSWORD_ERROR = "#error-cs-password-required"
+
+
+
+# TODO: python 3.14.7 playwright 1.63.0 python-dotenv 1.2.4 
+# TODO: regrest test 
 
 #USPĚPŠNÉ PŘIHLÁŠENÍ 
-def test_successful_login_flow(page: Page):
+def test_successful_login_flow(login_page: Page):
+    """Ověřuje úspěšné přihlášení s platnými údaji."""
+    page = login_page
+    page.locator(USERNAME_INPUT).fill(os.environ["ENGETO_EMAIL"])
+    page.locator(PASSWORD_INPUT).fill(os.environ["ENGETO_PASSWORD"])
+    page.locator(SUBMIT_BUTTON).click()
 
-    page.goto("https://engeto.cz/prehled-kurzu/")
-    page.locator("#cookiescript_reject").click()
-    page.get_by_role("link", name="Výukový portál").click() 
- 
-    expect(page).to_have_url("https://portal.engeto.com/lobby/sign-in")
-    
-    page.locator(".bg-base-white a").click() 
-    
-    
-    expect(page).to_have_url(re.compile(r"engeto-v2\.eu\.auth0\.com/u/login"))
-    
-   
-    page.locator("#username").fill(os.environ["ENGETO_EMAIL"])
-    page.locator("#password").fill(os.environ["ENGETO_PASSWORD"])
-    page.locator("button[type='submit']").click() 
-    
-   
     expect(page).to_have_url(re.compile(r"portal\.engeto\.com/study/"))
 
 
-
 #ŠPATNÉ PŘIHLAŠOVACÍ UDAJE
-def test_unsuccesful_flow(page: Page):
-    page.goto("https://engeto.cz/prehled-kurzu/")
-    page.locator("#cookiescript_reject").click()
-    page.get_by_role("link", name="Výukový portál").click() 
-     
-    expect(page).to_have_url("https://portal.engeto.com/lobby/sign-in")
-        
-    page.locator(".bg-base-white a").click() 
-        
-    expect(page).to_have_url(re.compile(r"engeto-v2\.eu\.auth0\.com/u/login"))
-    page.locator("#username").fill("špatnéjmeno")
-    page.locator("#password").fill("špatnéheslo")
-    page.locator("button[type='submit']").click() 
+def test_unsuccessful_login_flow(login_page: Page):
+    """Ověřuje, že při zadání špatných údajů se zobrazí chybová hláška a URL se nezmění."""
+    page = login_page
+    page.locator(USERNAME_INPUT).fill("spatnejmeno@email.cz")
+    page.locator(PASSWORD_INPUT).fill("spatneheslo")
+    page.locator(SUBMIT_BUTTON).click()
 
-    #Ověření, že systém nepustil uživatele dál a zůstane na login page
+    # Po odeslání se musí objevit chybová hláška a systém nepustí uživatele dál
+    expect(page.locator(LOGIN_ERROR)).to_be_visible()
     expect(page).to_have_url(re.compile(r"engeto-v2\.eu\.auth0\.com/u/login"))
 
 
-# test prázdného formuláře, ověří, že odeslání prázdného přihlašovacího formuláře nepustí uživatele dál.
-def test_login_with_empty_fields(page: Page):
-    
-    page.goto("https://engeto.cz/prehled-kurzu/")
-    page.locator("#cookiescript_reject").click()
-    page.get_by_role("link", name="Výukový portál").click()
-    page.locator(".bg-base-white a").click()
+def test_login_with_empty_fields(login_page: Page):
+    """Ověřuje, že odeslání prázdného formuláře vyvolá validaci a zobrazí chybové hlášky."""
+    page = login_page
+    page.locator(SUBMIT_BUTTON).click()
 
+    # Ani s prázdnými poli by uživatel neměl projít dál a měl by vidět chyby u obou polí
+    expect(page.locator(EMPTY_USERNAME_ERROR)).to_be_visible()
+    expect(page.locator(EMPTY_PASSWORD_ERROR)).to_be_visible()
     expect(page).to_have_url(re.compile(r"engeto-v2\.eu\.auth0\.com/u/login"))
-    page.locator("button[type='submit']").click()
 
-    # Ani s prázdnými poli by uživatel neměl projít dál
-    expect(page).to_have_url(re.compile(r"engeto-v2\.eu\.auth0\.com/u/login"))
